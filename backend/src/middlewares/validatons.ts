@@ -1,6 +1,6 @@
 import { Joi } from 'celebrate';
 
-const validateProductBody = Joi.object({
+export const validateProductBody = Joi.object({
   title: Joi.string().required().min(2).max(30)
     .messages({
       'string.base': 'Название товара должно быть строкой',
@@ -43,4 +43,36 @@ const validateProductBody = Joi.object({
     }),
 });
 
-export default validateProductBody;
+export const validateOrderBody = Joi.object({
+  items: Joi.array().items(Joi.string().hex().length(24)).required().messages({
+    'array.base': 'Items должен быть массивом',
+    'string.hex': 'ID товара должен быть в hex формате',
+    'string.length': 'ID товара должен содержать 24 символа',
+    'any.required': 'Items является обязательным полем',
+  }),
+  total: Joi.number().min(0).required().messages({
+    'number.base': 'Total должен быть числом',
+    'number.min': 'Total не может быть отрицательным',
+    'any.required': 'Total является обязательным полем',
+  }),
+  payment: Joi.string().valid('card', 'cash').required().messages({
+    'string.base': 'Payment должен быть строкой',
+    'any.only': 'Payment должен быть либо "card", либо "cash"',
+    'any.required': 'Payment является обязательным полем',
+  }),
+  email: Joi.string().email().required().messages({
+    'string.base': 'Email должен быть строкой',
+    'string.email': 'Email должен быть валидным email адресом',
+    'any.required': 'Email является обязательным полем',
+  }),
+  phone: Joi.string().pattern(/^\+?[0-9]{10,15}$/).required().messages({
+    'string.base': 'Phone должен быть строкой',
+    'string.pattern.base': 'Phone должен быть валидным номером телефона',
+    'any.required': 'Phone является обязательным полем',
+  }),
+  address: Joi.string().required().messages({
+    'string.base': 'Address должен быть строкой',
+    'string.empty': 'Address не может быть пустым',
+    'any.required': 'Address является обязательным полем',
+  }),
+});

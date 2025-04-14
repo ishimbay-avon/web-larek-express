@@ -1,23 +1,13 @@
-import { Request, Response } from 'express';
-import mongoose from 'mongoose';
+import { Request, Response, NextFunction } from 'express';
+import mongoose, { Error as MongooseError } from 'mongoose';
 import { faker } from '@faker-js/faker';
 import Product from '../models/product';
+import BadRequestError from '../errors/bad-request-error';
+import InternalError from '../errors/internal-error';
 
-const createOrder = async (req: Request, res: Response) => {
+const createOrder = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const {
-      items,
-      total,
-      payment,
-      email,
-      phone,
-      address,
-    } = req.body;
-
-    if (!items || !total || !payment || !email || !phone || !address) {
-      res.status(400).send({ message: 'Отсутствуют обязательные поля' });
-      return;
-    }
+    const { items, total } = req.body;
 
     const objectIds = items.map((id: string) => new mongoose.Types.ObjectId(id));
 
@@ -35,19 +25,20 @@ const createOrder = async (req: Request, res: Response) => {
     });
 
     if (!isCorrect) {
-      res.status(400).send({ message: 'Один или несколько продуктов имеют некорректную цену' });
-      return;
+      return next(new BadRequestError('Один или несколько продуктов имеют некорректную цену'));
     }
 
     if (total !== sumPrice) {
-      res.status(400).send({ message: 'Общая сумма не совпадает с суммой цен продуктов' });
-      return;
+      return next(new BadRequestError('Общая сумма не совпадает с суммой цен продуктов'));
     }
 
     const orderId = faker.string.uuid();
-    res.status(200).send({ id: orderId, total: sumPrice });
+    return res.status(200).send({ id: orderId, total: sumPrice });
   } catch (error) {
-    res.status(500).send({ message: 'Ошибка при обработке заказа' });
+    if (error instanceof MongooseError.ValidationError) {
+      return next(new BadRequestError('Ошибка валидации данных заказа'));
+    }
+    return next(new InternalError('Ошибка при обработке заказа'));
   }
 };
 

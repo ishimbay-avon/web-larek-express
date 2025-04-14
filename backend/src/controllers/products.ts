@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
+import { Error as MongooseError } from 'mongoose';
 import Product from '../models/product';
 import ConflictError from '../errors/conflict-error';
 import InternalError from '../errors/internal-error';
+import BadRequestError from '../errors/bad-request-error';
 
 export const getProducts = async (_req: Request, res: Response, next: NextFunction) => {
   try {
@@ -27,11 +29,6 @@ export const createProduct = async (
       price,
     } = req.body;
 
-    const existingProduct = await Product.findOne({ title });
-    if (existingProduct) {
-      return next(new ConflictError('Товар с таким названием уже существует'));
-    }
-
     const product = await Product.create({
       title,
       image,
@@ -40,8 +37,14 @@ export const createProduct = async (
       price,
     });
 
-    return res.status(200).send({ data: product });
+    return res.status(201).send({ data: product });
   } catch (error) {
+    if (error instanceof Error && error.message.includes('E11000')) {
+      return next(new ConflictError('Товар с таким названием уже существует'));
+    }
+    if (error instanceof MongooseError.ValidationError) {
+      return next(new BadRequestError('Ошибка валидации данных'));
+    }
     return next(error);
   }
 };

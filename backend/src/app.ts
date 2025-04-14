@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import { errors } from 'celebrate';
+import rateLimit from 'express-rate-limit';
 import NotFoundError from './errors/not-found-error';
 import productRouter from './routes/product';
 import orderRouter from './routes/order';
@@ -12,6 +13,17 @@ import { errorLogger, requestLogger } from './middlewares/logger';
 const { PORT = 3000, DB_ADDRESS = 'mongodb://127.0.0.1:27017/weblarek' } = process.env;
 
 const app = express();
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Слишком много запросов с этого IP, пожалуйста, попробуйте позже',
+});
+
+app.use(limiter);
+
 app.use(express.json());
 app.use(requestLogger);
 

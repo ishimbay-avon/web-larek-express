@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { celebrate, Segments } from 'celebrate';
 import { getProducts, createProduct } from '../controllers/products';
-import validateProductBody from '../middlewares/validatons';
+import { validateProductBody } from '../middlewares/validatons';
 
 const router = Router();
 
